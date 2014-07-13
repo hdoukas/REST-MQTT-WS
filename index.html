@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>COMPOSE IoT Demo</title>
+	<script type="text/javascript">
+		window.onload = startDemo;
+  
+		function startDemo() {
+			///tilt detection
+			if (window.DeviceMotionEvent) {
+				//alert("DeviceMotionEvent supported");
+			}
+
+			if (window.DeviceMotionEvent) {
+				
+				// Listen for the deviceorientation event and handle the raw data
+				window.addEventListener('deviceorientation', function(eventData) {
+					// gamma is the left-to-right tilt in degrees, where right is positive
+					var tiltLR = eventData.gamma;
+
+					// beta is the front-to-back tilt in degrees, where front is positive
+					var tiltFB = eventData.beta;
+
+					// alpha is the compass direction the device is facing in degrees
+					var dir = eventData.alpha
+
+					// call our orientation event handler
+					deviceOrientationHandler(tiltLR, tiltFB, dir);
+				}, false);
+			} else {
+				alert("Not supported.");
+			}
+
+			canvas = document.getElementById("thecanvas");
+			
+			if( canvas && canvas.getContext ) {
+				ctx = canvas.getContext("2d");
+				ctx.rect(50,50,250,250);
+				ctx.stroke();
+				//setInterval(rotateY,50);
+			}
+
+			WebSocketTest();
+		}
+
+
+
+		var goleft, goright = false;
+		var color_index = 0;
+		var ws;
+ 
+		
+
+		function deviceOrientationHandler(tiltLR, tiltFB, dir) {
+
+			if(Math.round(tiltLR) > 10 && goright == false) {
+				goright = true;
+				goleft = false;
+				
+				paint();
+				
+			}
+
+			else if(Math.round(tiltLR) < -10 && goleft == false) {
+				goright = false;
+				goleft = true;
+				
+
+				paint();
+				
+			}
+
+			else if(Math.round(tiltLR) < 10 && Math.round(tiltLR) > -5) {
+				goright = false;
+				goleft = false;
+			}
+	  
+		}
+
+		function paint() {
+			canvas = document.getElementById("thecanvas");
+
+			color_index = Math.floor(Math.random() * 3) + 1
+			
+			if( canvas && canvas.getContext ) {
+				ctx = canvas.getContext("2d");
+				ctx.rect(50,50,250,250);
+
+				if(Math.abs(color_index) == 1) {
+					ctx.fillStyle="red";
+					ws.send("1");
+				}
+				if(Math.abs(color_index) == 2) {
+					ctx.fillStyle="green";
+					ws.send("2");
+				}
+				if(Math.abs(color_index) == 3) {
+					ctx.fillStyle="blue";
+					ws.send("3");
+				}
+
+				ctx.fill();
+
+			}
+		}
+
+		function WebSocketTest()
+		{
+  			if ("WebSocket" in window)
+  			{
+	 			//alert("WebSocket is supported by your Browser!");
+	 		// Let us open a web socket
+	 		ws = new WebSocket("ws://SERVER.IP:8010");
+	 		ws.onopen = function()
+	 		{
+				// Web Socket is connected, send data using send()
+				//ws.send("Message to send");
+				//alert("Message is sent...");
+	 		};
+	 		ws.onmessage = function (evt) 
+	 		{ 
+				var received_msg = evt.data;
+				console.log("Message is received... "+received_msg);
+				document.body.style.background = 'black';
+				setTimeout(function(){document.body.style.background = 'white';}, 1500);
+	 		};
+	 		ws.onclose = function()
+	 		{ 
+				// websocket is closed.
+				console.log("Connection is closed..."); 
+	 		};
+  }
+  else
+  {
+	 // The browser doesn't support WebSocket
+	 alert("WebSocket NOT supported by your Browser!");
+  }
+}
+
+	</script>
+</head>
+<body>
+		<canvas id="thecanvas" width="500" height="550">
+		Your browser does not support the HTML5 canvas element. <a href=#>Click here</a> to watch the video.
+	</canvas>
+ 
+	</body>
+</html>
